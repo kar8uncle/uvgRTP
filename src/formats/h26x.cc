@@ -380,7 +380,8 @@ rtp_error_t uvgrtp::formats::h26x::fu_division(uint8_t *data, size_t data_len, s
     {
         return RTP_GENERIC_ERROR;
     }
-
+    
+    buffers->clear();
     rtp_error_t ret = RTP_OK;
     if ((ret = construct_format_header_divide_fus(data, data_len, payload_size, *buffers)) != RTP_OK)
         return ret;
