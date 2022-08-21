@@ -52,7 +52,14 @@ rtp_error_t uvgrtp::base_srtp::derive_key(int label, size_t key_size,
     uvgrtp::crypto::aes::ecb ecb(key, key_size); // srtp_ctx_->n_e);
     ecb.encrypt(ks, input, UVG_IV_LENGTH);
 
-    memcpy(out, ks, out_len);
+    for (size_t i = 0, written_len = 0; written_len < out_len; ++i, written_len += UVG_IV_LENGTH)
+    {
+        reinterpret_cast<uint16_t&>(input[UVG_SALT_LENGTH]) = htons(i);
+        ecb.encrypt(ks, input, UVG_IV_LENGTH);
+        memcpy(out, ks, min(out_len, UVG_IV_LENGTH));
+        out += UVG_IV_LENGTH;
+    }
+
     return RTP_OK;
 }
 
@@ -65,7 +72,11 @@ rtp_error_t uvgrtp::base_srtp::create_iv(uint8_t *out, uint32_t ssrc, uint64_t i
     int i;
 
     memset(out,         0,  UVG_IV_LENGTH);
+
+    ssrc = htonl(ssrc);
     memcpy(&out[4], &ssrc,  sizeof(uint32_t));
+
+    index = htonll(index);
     memcpy(buf,     &index, sizeof(uint64_t));
 
     for (i = 0; i < 8; i++)
