@@ -952,6 +952,13 @@ rtp_error_t uvgrtp::rtcp::recv_packet_handler(void *arg, int flags, frame::rtp_f
     uvgrtp::frame::rtp_frame *frame = *out;
     uvgrtp::rtcp *rtcp              = (uvgrtp::rtcp *)arg;
 
+    if (frame->header.marker == 1)
+    if (auto payload_type = frame->header.payload;
+        72 <= payload_type && payload_type <= 76)
+    {
+        return rtcp->handle_incoming_packet(frame->dgram, frame->dgram_size);
+    }
+
     /* If this is the first packet from remote, move the participant from initial_participants_
      * to participants_, initialize its state and put it on probation until enough valid
      * packets from them have been received
@@ -1032,7 +1039,7 @@ rtp_error_t uvgrtp::rtcp::handle_incoming_packet(uint8_t *buffer, size_t size)
     {
         sender_ssrc = ntohl(*(uint32_t*)& buffer[read_ptr + RTCP_HEADER_SIZE]);
         if (srtcp_ && (ret = srtcp_->handle_rtcp_decryption(flags_, sender_ssrc, 
-            buffer + RTCP_HEADER_SIZE + SSRC_CSRC_SIZE, size)) != RTP_OK)
+            buffer, size)) != RTP_OK)
         {
             LOG_ERROR("Failed at decryption");
             return ret;

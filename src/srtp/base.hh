@@ -26,7 +26,7 @@ enum {
 #define UVG_AES_KEY_LENGTH      16 /* 128 bits */
 #define UVG_HMAC_KEY_LENGTH     32 /* 256 bits */
 #define UVG_SALT_LENGTH         14 /* 112 bits */
-#define UVG_AUTH_LENGTH         16
+#define UVG_AUTH_LENGTH         20
 #define UVG_IV_LENGTH           16
 #define UVG_AUTH_TAG_LENGTH     10
 #define UVG_SRTCP_INDEX_LENGTH   4

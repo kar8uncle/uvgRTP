@@ -56,7 +56,10 @@ rtp_error_t uvgrtp::srtp::recv_packet_handler(void *arg, int flags, frame::rtp_f
         auto hmac_sha1     = uvgrtp::crypto::hmac::sha1(ctx->key_ctx.remote.auth_key, UVG_AUTH_LENGTH);
 
         hmac_sha1.update(frame->dgram, frame->dgram_size - UVG_AUTH_TAG_LENGTH);
-        hmac_sha1.update((uint8_t *)&ctx->roc, sizeof(ctx->roc));
+        {
+            const uint32_t roc_be = htonl(ctx->roc);
+            hmac_sha1.update((const uint8_t *)&roc_be, sizeof(roc_be));
+        }
         hmac_sha1.final((uint8_t *)digest, UVG_AUTH_TAG_LENGTH);
 
         if (memcmp(digest, &frame->dgram[frame->dgram_size - UVG_AUTH_TAG_LENGTH], UVG_AUTH_TAG_LENGTH)) {
@@ -121,6 +124,7 @@ rtp_error_t uvgrtp::srtp::send_packet_handler(void *arg, uvgrtp::buf_vec& buffer
     auto off        = srtp->authenticate_rtp() ? 2 : 1;
     auto data       = buffers.at(buffers.size() - off);
     auto hmac_sha1  = uvgrtp::crypto::hmac::sha1(ctx->key_ctx.local.auth_key, UVG_AUTH_LENGTH);
+    auto roc_be     = htonl(ctx->roc);
     rtp_error_t ret = RTP_OK;
 
     if (srtp->use_null_cipher())
@@ -145,7 +149,7 @@ authenticate:
     for (size_t i = 0; i < buffers.size() - 1; ++i)
         hmac_sha1.update((uint8_t *)buffers[i].second, buffers[i].first);
 
-    hmac_sha1.update((uint8_t *)&ctx->roc, sizeof(ctx->roc));
+    hmac_sha1.update((const uint8_t *)&roc_be, sizeof(roc_be));
     hmac_sha1.final((uint8_t *)buffers[buffers.size() - 1].second, UVG_AUTH_TAG_LENGTH);
 
     return ret;
